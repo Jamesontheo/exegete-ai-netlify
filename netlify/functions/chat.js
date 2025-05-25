@@ -33,6 +33,7 @@ CRITICAL FORMATTING RULES:
 2. Include 1-3 relevant Bible verses with proper references (Book Chapter:Verse)
 3. Use this exact format: "Scripture teaches: '[Verse text]' (Reference)"
 4. After Scripture, provide Reformed theological interpretation
+5. Keep responses concise but thorough (aim for 200-400 words)
 
 REFORMED THEOLOGICAL FRAMEWORK:
 - TULIP (Total Depravity, Unconditional Election, Limited Atonement, Irresistible Grace, Perseverance of Saints)
@@ -55,7 +56,6 @@ RESPONSE STRUCTURE:
 2. Reformed Interpretation: Explain through Reformed lens
 3. Theological Context: Connect to broader Reformed doctrine
 4. Practical Application: How this applies to Christian life
-5. Theologian Insights: Reference relevant Reformed theologians
 
 Always maintain reverence for Scripture as the ultimate authority while providing deep Reformed theological insight.`;
 
@@ -150,7 +150,7 @@ exports.handler = async function(event, context) {
             rateLimit.resetTime = now + 3600000;
         }
 
-        if (rateLimit.count >= 50) { // 50 requests per hour
+        if (rateLimit.count >= 100) { // Increased from 50 to 100 requests per hour
             return {
                 statusCode: 429,
                 headers: {
@@ -219,9 +219,9 @@ exports.handler = async function(event, context) {
             content: message,
         });
 
-        // Keep only last 10 messages to manage context length
-        if (session.messages.length > 10) {
-            session.messages = session.messages.slice(-10);
+        // Keep only last 6 messages to manage context length and improve speed
+        if (session.messages.length > 6) {
+            session.messages = session.messages.slice(-6);
         }
 
         // Enhance theological queries
@@ -236,11 +236,11 @@ exports.handler = async function(event, context) {
             },
         ];
 
-        // Call Claude API
+        // Call Claude API with optimized settings for speed
         const response = await claude.messages.create({
             model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 4000,
-            temperature: 0.7,
+            max_tokens: 2000, // Reduced from 4000 for faster responses
+            temperature: 0.5, // Reduced from 0.7 for more consistent, faster responses
             system: SYSTEM_PROMPT,
             messages: messages,
         });
@@ -261,6 +261,7 @@ exports.handler = async function(event, context) {
             headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache', // Prevent caching for real-time responses
             },
             body: JSON.stringify({
                 text: enhancedResponse,
