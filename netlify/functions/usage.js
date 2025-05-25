@@ -1,7 +1,7 @@
 // Simple rate limit tracking (in-memory)
 const rateLimits = new Map();
 
-export default async function handler(event, context) {
+exports.handler = async function(event, context) {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
         return {

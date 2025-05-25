@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+const Anthropic = require('@anthropic-ai/sdk');
 
 // Rate limiting storage (in-memory for simplicity)
 const rateLimits = new Map();
@@ -110,7 +110,7 @@ function enhanceResponse(text) {
     return enhanced;
 }
 
-export default async function handler(event, context) {
+exports.handler = async function(event, context) {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
         return {
