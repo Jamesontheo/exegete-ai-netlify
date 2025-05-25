@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exegete.AI - Scripture-First Reformed Theology Assistant</title>
+    <meta name="description" content="Scripture-first Reformed theology assistant powered by AI. Get biblical answers grounded in Reformed doctrine and Westminster Standards.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <h1>Exegete<span class="logo-dot">.</span><span class="logo-ai">AI</span></h1>
+                <p>Scripture-First Reformed Theology Assistant</p>
+            </div>
+            <div class="header-controls">
+                <button id="theme-button" title="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="help-button" title="Help & Information">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Chat Container -->
+            <div class="chat-container">
+                <!-- Intro Message -->
+                <div id="intro-message" class="intro-message">
+                    <h2>Welcome to Exegete.AI</h2>
+                    <p>Ask me anything about Scripture, Reformed theology, or biblical interpretation. I'll provide answers grounded in God's Word and informed by Reformed doctrine.</p>
+                    
+                    <div class="intro-examples">
+                        <button class="example-button" data-query="What does Scripture teach about justification by faith alone?">
+                            Justification by Faith
+                        </button>
+                        <button class="example-button" data-query="Explain the biblical basis for predestination">
+                            Predestination
+                        </button>
+                        <button class="example-button" data-query="What is covenant theology according to Scripture?">
+                            Covenant Theology
+                        </button>
+                        <button class="example-button" data-query="How does Scripture describe the Trinity?">
+                            The Trinity
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="chat-messages" style="display: none;">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+
+                <!-- Chat Input -->
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <textarea id="user-input" placeholder="Ask about Scripture, theology, or biblical interpretation..." rows="1"></textarea>
+                        <button id="send-button" class="send-button">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Suggestion Tags -->
+                    <div class="suggestion-tags">
+                        <span class="category-label">Quick topics:</span>
+                        <span class="tag" data-query="What does Scripture teach about salvation?">Salvation</span>
+                        <span class="tag" data-query="Explain biblical sanctification">Sanctification</span>
+                        <span class="tag" data-query="What is the biblical view of prayer?">Prayer</span>
+                        <span class="tag" data-query="How does Scripture describe worship?">Worship</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar-nav">
+                    <button class="sidebar-tab active" data-tab="scripture">
+                        <i class="fas fa-book"></i>
+                        Scripture
+                    </button>
+                    <button class="sidebar-tab" data-tab="topics">
+                        <i class="fas fa-list"></i>
+                        Topics
+                    </button>
+                    <button class="sidebar-tab" data-tab="theologians">
+                        <i class="fas fa-user-graduate"></i>
+                        Theologians
+                    </button>
+                </div>
+
+                <!-- Scripture Tab Content -->
+                <div id="scripture-content" class="sidebar-content active">
+                    <h3>Bible Reference</h3>
+                    
+                    <div class="bible-search">
+                        <input type="text" id="verse-search" placeholder="e.g., John 3:16">
+                        <button id="verse-search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+
+                    <div class="testament-heading">Old Testament</div>
+                    <div class="books-grid">
+                        <div class="bible-book" data-book="Genesis">Genesis</div>
+                        <div class="bible-book" data-book="Exodus">Exodus</div>
+                        <div class="bible-book" data-book="Leviticus">Leviticus</div>
+                        <div class="bible-book" data-book="Numbers">Numbers</div>
+                        <div class="bible-book" data-book="Deuteronomy">Deuteronomy</div>
+                        <div class="bible-book" data-book="Joshua">Joshua</div>
+                        <div class="bible-book" data-book="Judges">Judges</div>
+                        <div class="bible-book" data-book="Ruth">Ruth</div>
+                        <div class="bible-book" data-book="1 Samuel">1 Samuel</div>
+                        <div class="bible-book" data-book="2 Samuel">2 Samuel</div>
+                        <div class="bible-book" data-book="1 Kings">1 Kings</div>
+                        <div class="bible-book" data-book="2 Kings">2 Kings</div>
+                        <div class="bible-book" data-book="1 Chronicles">1 Chronicles</div>
+                        <div class="bible-book" data-book="2 Chronicles">2 Chronicles</div>
+                        <div class="bible-book" data-book="Ezra">Ezra</div>
+                        <div class="bible-book" data-book="Nehemiah">Nehemiah</div>
+                        <div class="bible-book" data-book="Esther">Esther</div>
+                        <div class="bible-book" data-book="Job">Job</div>
+                        <div class="bible-book" data-book="Psalms">Psalms</div>
+                        <div class="bible-book" data-book="Proverbs">Proverbs</div>
+                        <div class="bible-book" data-book="Ecclesiastes">Ecclesiastes</div>
+                        <div class="bible-book" data-book="Song of Solomon">Song of Solomon</div>
+                        <div class="bible-book" data-book="Isaiah">Isaiah</div>
+                        <div class="bible-book" data-book="Jeremiah">Jeremiah</div>
+                        <div class="bible-book" data-book="Lamentations">Lamentations</div>
+                        <div class="bible-book" data-book="Ezekiel">Ezekiel</div>
+                        <div class="bible-book" data-book="Daniel">Daniel</div>
+                        <div class="bible-book" data-book="Hosea">Hosea</div>
+                        <div class="bible-book" data-book="Joel">Joel</div>
+                        <div class="bible-book" data-book="Amos">Amos</div>
+                        <div class="bible-book" data-book="Obadiah">Obadiah</div>
+                        <div class="bible-book" data-book="Jonah">Jonah</div>
+                        <div class="bible-book" data-book="Micah">Micah</div>
+                        <div class="bible-book" data-book="Nahum">Nahum</div>
+                        <div class="bible-book" data-book="Habakkuk">Habakkuk</div>
+                        <div class="bible-book" data-book="Zephaniah">Zephaniah</div>
+                        <div class="bible-book" data-book="Haggai">Haggai</div>
+                        <div class="bible-book" data-book="Zechariah">Zechariah</div>
+                        <div class="bible-book" data-book="Malachi">Malachi</div>
+                    </div>
+
+                    <div class="testament-heading">New Testament</div>
+                    <div class="books-grid">
+                        <div class="bible-book" data-book="Matthew">Matthew</div>
+                        <div class="bible-book" data-book="Mark">Mark</div>
+                        <div class="bible-book" data-book="Luke">Luke</div>
+                        <div class="bible-book" data-book="John">John</div>
+                        <div class="bible-book" data-book="Acts">Acts</div>
+                        <div class="bible-book" data-book="Romans">Romans</div>
+                        <div class="bible-book" data-book="1 Corinthians">1 Corinthians</div>
+                        <div class="bible-book" data-book="2 Corinthians">2 Corinthians</div>
+                        <div class="bible-book" data-book="Galatians">Galatians</div>
+                        <div class="bible-book" data-book="Ephesians">Ephesians</div>
+                        <div class="bible-book" data-book="Philippians">Philippians</div>
+                        <div class="bible-book" data-book="Colossians">Colossians</div>
+                        <div class="bible-book" data-book="1 Thessalonians">1 Thessalonians</div>
+                        <div class="bible-book" data-book="2 Thessalonians">2 Thessalonians</div>
+                        <div class="bible-book" data-book="1 Timothy">1 Timothy</div>
+                        <div class="bible-book" data-book="2 Timothy">2 Timothy</div>
+                        <div class="bible-book" data-book="Titus">Titus</div>
+                        <div class="bible-book" data-book="Philemon">Philemon</div>
+                        <div class="bible-book" data-book="Hebrews">Hebrews</div>
+                        <div class="bible-book" data-book="James">James</div>
+                        <div class="bible-book" data-book="1 Peter">1 Peter</div>
+                        <div class="bible-book" data-book="2 Peter">2 Peter</div>
+                        <div class="bible-book" data-book="1 John">1 John</div>
+                        <div class="bible-book" data-book="2 John">2 John</div>
+                        <div class="bible-book" data-book="3 John">3 John</div>
+                        <div class="bible-book" data-book="Jude">Jude</div>
+                        <div class="bible-book" data-book="Revelation">Revelation</div>
+                    </div>
+                </div>
+
+                <!-- Topics Tab Content -->
+                <div id="topics-content" class="sidebar-content">
+                    <h3>Reformed Topics</h3>
+                    
+                    <div class="accordion">
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                Doctrines of Grace (TULIP)
+                            </button>
+                            <div class="accordion-content">
+                                <ul>
+                                    <li class="topic-item" data-query="What does Scripture teach about total depravity?">Total Depravity</li>
+                                    <li class="topic-item" data-query="Explain unconditional election from Scripture">Unconditional Election</li>
+                                    <li class="topic-item" data-query="What is the biblical basis for limited atonement?">Limited Atonement</li>
+                                    <li class="topic-item" data-query="How does Scripture describe irresistible grace?">Irresistible Grace</li>
+                                    <li class="topic-item" data-query="What does the Bible teach about perseverance of the saints?">Perseverance of Saints</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                Five Solas
+                            </button>
+                            <div class="accordion-content">
+                                <ul>
+                                    <li class="topic-item" data-query="What does Scripture teach about Sola Scriptura?">Sola Scriptura</li>
+                                    <li class="topic-item" data-query="Explain Sola Fide from the Bible">Sola Fide</li>
+                                    <li class="topic-item" data-query="What is the biblical basis for Sola Gratia?">Sola Gratia</li>
+                                    <li class="topic-item" data-query="How does Scripture support Solus Christus?">Solus Christus</li>
+                                    <li class="topic-item" data-query="What does the Bible teach about Soli Deo Gloria?">Soli Deo Gloria</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                Covenant Theology
+                            </button>
+                            <div class="accordion-content">
+                                <ul>
+                                    <li class="topic-item" data-query="What is the covenant of redemption in Scripture?">Covenant of Redemption</li>
+                                    <li class="topic-item" data-query="Explain the covenant of works from the Bible">Covenant of Works</li>
+                                    <li class="topic-item" data-query="What does Scripture teach about the covenant of grace?">Covenant of Grace</li>
+                                    <li class="topic-item" data-query="How do the old and new covenants relate biblically?">Old & New Covenants</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                Sacraments & Worship
+                            </button>
+                            <div class="accordion-content">
+                                <ul>
+                                    <li class="topic-item" data-query="What does Scripture teach about baptism?">Baptism</li>
+                                    <li class="topic-item" data-query="Explain the Lord's Supper from the Bible">Lord's Supper</li>
+                                    <li class="topic-item" data-query="What is the regulative principle of worship?">Regulative Principle</li>
+                                    <li class="topic-item" data-query="How should we worship according to Scripture?">Biblical Worship</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theologians Tab Content -->
+                <div id="theologians-content" class="sidebar-content">
+                    <h3>Reformed Theologians</h3>
+                    
+                    <div class="theologian-list">
+                        <div class="theologian-card" data-query="What did John Calvin teach about this topic?">
+                            <h4>John Calvin</h4>
+                            <span class="years">1509-1564</span>
+                            <p>French Reformer and systematic theologian</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What did Martin Luther teach about this topic?">
+                            <h4>Martin Luther</h4>
+                            <span class="years">1483-1546</span>
+                            <p>German professor and catalyst of the Reformation</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What did Augustine teach about this topic?">
+                            <h4>St. Augustine</h4>
+                            <span class="years">354-430</span>
+                            <p>Early church father and theologian</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What did R.C. Sproul teach about this topic?">
+                            <h4>R.C. Sproul</h4>
+                            <span class="years">1939-2017</span>
+                            <p>Reformed theologian and apologist</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What does John Piper teach about this topic?">
+                            <h4>John Piper</h4>
+                            <span class="years">1946-present</span>
+                            <p>Reformed Baptist pastor and author</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What does Wayne Grudem teach about this topic?">
+                            <h4>Wayne Grudem</h4>
+                            <span class="years">1948-present</span>
+                            <p>Systematic theologian and author</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What did Tim Keller teach about this topic?">
+                            <h4>Tim Keller</h4>
+                            <span class="years">1950-2023</span>
+                            <p>Pastor, theologian, and apologist</p>
+                        </div>
+
+                        <div class="theologian-card" data-query="What does D.A. Carson teach about this topic?">
+                            <h4>D.A. Carson</h4>
+                            <span class="years">1946-present</span>
+                            <p>Biblical scholar and theologian</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer>
+            <p>&copy; <span id="current-year">2024</span> Exegete.AI - Scripture-First Reformed Theology Assistant</p>
+        </footer>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>About Exegete.AI</h2>
+            
+            <h3>What is Exegete.AI?</h3>
+            <p>Exegete.AI is a Scripture-first Reformed theology assistant designed to help you explore biblical truth through the lens of Reformed doctrine. Every response begins with Scripture and is grounded in God's Word.</p>
+            
+            <h3>How to Use</h3>
+            <ul>
+                <li><strong>Ask Questions:</strong> Type any theological or biblical question</li>
+                <li><strong>Browse Topics:</strong> Use the sidebar to explore Reformed doctrines</li>
+                <li><strong>Reference Scripture:</strong> Click on Bible books or search for verses</li>
+                <li><strong>Explore Theologians:</strong> Learn what Reformed theologians taught</li>
+                <li><strong>Toggle Theme:</strong> Switch between light and dark modes</li>
+            </ul>
+            
+            <h3>Reformed Framework</h3>
+            <p>All responses are grounded in:</p>
+            <ul>
+                <li>Scripture as the ultimate authority (Sola Scriptura)</li>
+                <li>The Doctrines of Grace (TULIP)</li>
+                <li>Covenant Theology</li>
+                <li>Westminster Standards</li>
+                <li>Historic Reformed Confessions</li>
+            </ul>
+            
+            <h3>Featured Theologians</h3>
+            <p>Responses draw from the wisdom of Reformed theologians including John Calvin, Martin Luther, Augustine, R.C. Sproul, John Piper, Wayne Grudem, Tim Keller, and D.A. Carson.</p>
+            
+            <div class="text-center">
+                <p><em>"All Scripture is breathed out by God and profitable for teaching, for reproof, for correction, and for training in righteousness" - 2 Timothy 3:16</em></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

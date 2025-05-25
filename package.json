@@ -1,0 +1,37 @@
+{
+  "name": "exegete-ai-netlify",
+  "version": "2.0.0",
+  "description": "Scripture-First Reformed Theology Assistant powered by Claude AI",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step required for static site'",
+    "start": "netlify dev",
+    "deploy": "netlify deploy --prod"
+  },
+  "keywords": [
+    "theology",
+    "reformed",
+    "scripture",
+    "bible",
+    "ai",
+    "claude",
+    "netlify"
+  ],
+  "author": "Exegete.AI",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/exegete-ai-netlify.git"
+  },
+  "homepage": "https://exegete-ai.netlify.app"
+}
