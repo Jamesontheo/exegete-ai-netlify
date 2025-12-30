@@ -24,17 +24,39 @@
     <div class="container">
         <!-- Header -->
         <header>
-            <div class="logo">
-                <h1>Exegete<span class="logo-dot">.</span><span class="logo-ai">AI</span></h1>
-                <p>Scripture-First Reformed Theology Assistant</p>
+            <div class="header-left">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Exegete<span class="logo-dot">.</span><span class="logo-ai">AI</span></h1>
+                        <p class="logo-tagline">Scripture-First Reformed Theology</p>
+                    </div>
+                </div>
             </div>
             <div class="header-controls">
-                <button id="theme-button" title="Toggle theme">
-                    <i class="fas fa-moon"></i>
-                </button>
-                <button id="help-button" title="Help & Information">
-                    <i class="fas fa-question-circle"></i>
-                </button>
+                <div class="control-group history-controls">
+                    <button id="export-button" class="header-btn" title="Export conversation" onclick="exportChatHistory()">
+                        <i class="fas fa-download"></i>
+                        <span class="btn-label">Export</span>
+                    </button>
+                    <button id="clear-button" class="header-btn" title="Clear conversation" onclick="clearChatHistory()">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="btn-label">Clear</span>
+                    </button>
+                </div>
+                <div class="control-divider"></div>
+                <div class="control-group settings-controls">
+                    <button id="theme-button" class="header-btn" title="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                        <span class="btn-label">Theme</span>
+                    </button>
+                    <button id="help-button" class="header-btn" title="Help & Information">
+                        <i class="fas fa-question-circle"></i>
+                        <span class="btn-label">Help</span>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -74,6 +96,7 @@
                         <textarea id="user-input" placeholder="Ask about Scripture, theology, or biblical interpretation..." rows="1"></textarea>
                         <button id="send-button" class="send-button">
                             <i class="fas fa-paper-plane"></i>
+                            <span class="send-text">Send</span>
                         </button>
                     </div>
                     
@@ -313,11 +336,6 @@
                 </div>
             </div>
         </main>
-
-        <!-- Footer -->
-        <footer>
-            <p>&copy; <span id="current-year">2024</span> Exegete.AI - Scripture-First Reformed Theology Assistant</p>
-        </footer>
     </div>
 
     <!-- Help Modal -->

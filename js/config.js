@@ -23,7 +23,9 @@ const CONFIG = {
         DESCRIPTION: 'Scripture-First Reformed Theology Assistant',
         MAX_MESSAGE_LENGTH: 2000,
         SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
-        AUTO_SCROLL_DELAY: 100
+        AUTO_SCROLL_DELAY: 100,
+        ENABLE_STREAMING: true, // Enable streaming responses
+        SAVE_HISTORY: true // Save conversation history
     },
 
     // UI Configuration

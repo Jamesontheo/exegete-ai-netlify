@@ -23,7 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let sessionId = localStorage.getItem(CONFIG.STORAGE.SESSION_ID) || null;
     let isLoading = false;
     let retryCount = 0;
-    
+    let conversationHistory = [];
+
     // Initialize Application
     init();
     
@@ -221,71 +222,217 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendMessage() {
         const message = userInput.value.trim();
         if (!message || isLoading) return;
-        
+
         // Validate message length
         if (message.length > CONFIG.APP.MAX_MESSAGE_LENGTH) {
             showError(`Message too long. Maximum ${CONFIG.APP.MAX_MESSAGE_LENGTH} characters allowed.`);
             return;
         }
-        
+
         hideIntroMessage();
         addMessageToChat('user', message);
-        
+
         // Clear input and disable send button
         userInput.value = '';
         userInput.style.height = 'auto';
         setLoading(true);
-        
-        // Add loading indicator
+
+        // Check if streaming is enabled
+        if (CONFIG.APP.ENABLE_STREAMING) {
+            await sendStreamingMessage(message);
+        } else {
+            await sendNonStreamingMessage(message);
+        }
+
+        setLoading(false);
+    }
+
+    async function sendStreamingMessage(message) {
+        // Show typing indicator
+        const typingIndicator = addTypingIndicator();
+
+        try {
+            const response = await fetch(CONFIG.API.BASE_URL + CONFIG.API.ENDPOINTS.CHAT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message,
+                    sessionId,
+                    stream: true
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            // Remove typing indicator and create message div
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatMessages.removeChild(typingIndicator);
+            }
+
+            // Create assistant message div for streaming
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            messageDiv.setAttribute('data-timestamp', Date.now());
+            messageDiv.innerHTML = `
+                <div class="message-wrapper">
+                    <div class="message-content">
+                        <div class="streaming-text"></div>
+                        <span class="streaming-cursor">▋</span>
+                    </div>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+
+            const streamingTextDiv = messageDiv.querySelector('.streaming-text');
+            const cursor = messageDiv.querySelector('.streaming-cursor');
+            let fullText = '';
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+
+                        if (data.type === 'text') {
+                            fullText += data.content;
+                            streamingTextDiv.innerHTML = formatMessage(fullText);
+                            scrollToBottom();
+                        } else if (data.type === 'done') {
+                            if (data.sessionId) {
+                                sessionId = data.sessionId;
+                                localStorage.setItem(CONFIG.STORAGE.SESSION_ID, sessionId);
+                            }
+                        } else if (data.type === 'error') {
+                            throw new Error(data.message);
+                        }
+                    }
+                }
+            }
+
+            // Remove cursor and finalize
+            cursor.remove();
+
+            const timestamp = formatTimestamp(Date.now());
+            const messageWrapper = messageDiv.querySelector('.message-wrapper');
+            messageWrapper.innerHTML = `
+                <div class="message-content">
+                    ${formatMessage(fullText)}
+                </div>
+                <div class="message-footer">
+                    <span class="message-timestamp">${timestamp}</span>
+                    <div class="message-actions">
+                        <button class="action-btn copy-btn" title="Copy message" aria-label="Copy message">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="action-btn regenerate-btn" title="Regenerate response" aria-label="Regenerate response">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            messageDiv.classList.add('message-visible');
+            addInteractiveListeners(messageDiv);
+
+            // Add action button listeners
+            const copyBtn = messageDiv.querySelector('.copy-btn');
+            const regenerateBtn = messageDiv.querySelector('.regenerate-btn');
+
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => copyMessageToClipboard(messageDiv));
+            }
+
+            if (regenerateBtn) {
+                regenerateBtn.addEventListener('click', () => regenerateMessage(messageDiv));
+            }
+
+            // Save to history
+            if (CONFIG.APP.SAVE_HISTORY) {
+                saveChatHistory();
+            }
+
+        } catch (error) {
+            console.error('Streaming error:', error);
+
+            // Remove typing indicator if still present
+            if (typingIndicator && typingIndicator.parentNode) {
+                chatMessages.removeChild(typingIndicator);
+            }
+
+            addMessageToChat('assistant', '<p>Sorry, there was an error streaming the response. Please try again.</p>');
+        }
+    }
+
+    async function sendNonStreamingMessage(message) {
         const loadingDiv = addLoadingIndicator();
-        
+
         try {
             const response = await fetchWithRetry(CONFIG.API.ENDPOINTS.CHAT, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     message,
-                    sessionId 
+                    sessionId,
+                    stream: false
                 })
             });
-            
+
             // Remove loading indicator
             chatMessages.removeChild(loadingDiv);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
-            
+
             // Save session ID
             if (data.sessionId) {
                 sessionId = data.sessionId;
                 localStorage.setItem(CONFIG.STORAGE.SESSION_ID, sessionId);
             }
-            
+
             // Add assistant response
             if (data.text) {
                 addMessageToChat('assistant', data.text);
             } else {
                 throw new Error('No response text received');
             }
-            
+
+            // Save to history
+            if (CONFIG.APP.SAVE_HISTORY) {
+                saveChatHistory();
+            }
+
             retryCount = 0; // Reset retry count on success
-            
+
         } catch (error) {
             console.error('Chat error:', error);
-            
+
             // Remove loading indicator
             if (loadingDiv.parentNode) {
                 chatMessages.removeChild(loadingDiv);
             }
-            
+
             // Show error message
             let errorMessage = 'I apologize, but there was an error processing your request.';
-            
+
             if (error.message.includes('429')) {
                 errorMessage = 'Too many requests. Please wait a moment before trying again.';
             } else if (error.message.includes('401')) {
@@ -293,10 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (error.message.includes('500')) {
                 errorMessage = 'Server error. Please try again later.';
             }
-            
+
             addMessageToChat('assistant', errorMessage);
-        } finally {
-            setLoading(false);
         }
     }
     
@@ -355,36 +500,75 @@ document.addEventListener('DOMContentLoaded', () => {
         return loadingDiv;
     }
     
-    function addMessageToChat(role, content) {
+    function addMessageToChat(role, content, saveHistory = true) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
-        
+        messageDiv.setAttribute('data-timestamp', Date.now());
+
         // Format content for assistant messages
         if (role === 'assistant') {
             content = formatAssistantMessage(content);
         }
-        
+
         const formattedContent = formatMessage(content);
-        
+        const timestamp = formatTimestamp(Date.now());
+
         messageDiv.innerHTML = `
-            <div class="message-content">
-                ${formattedContent}
+            <div class="message-wrapper">
+                <div class="message-content">
+                    ${formattedContent}
+                </div>
+                <div class="message-footer">
+                    <span class="message-timestamp">${timestamp}</span>
+                    ${role === 'assistant' ? `
+                        <div class="message-actions">
+                            <button class="action-btn copy-btn" title="Copy message" aria-label="Copy message">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="action-btn regenerate-btn" title="Regenerate response" aria-label="Regenerate response">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
             </div>
         `;
-        
+
         // Check if user was at bottom before adding message
         const wasAtBottom = isAtBottom();
-        
+
         chatMessages.appendChild(messageDiv);
-        
+
+        // Add fade-in animation
+        setTimeout(() => messageDiv.classList.add('message-visible'), 10);
+
         // Add event listeners to interactive elements
         addInteractiveListeners(messageDiv);
-        
+
+        // Add copy button listener
+        if (role === 'assistant') {
+            const copyBtn = messageDiv.querySelector('.copy-btn');
+            const regenerateBtn = messageDiv.querySelector('.regenerate-btn');
+
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => copyMessageToClipboard(messageDiv));
+            }
+
+            if (regenerateBtn) {
+                regenerateBtn.addEventListener('click', () => regenerateMessage(messageDiv));
+            }
+        }
+
         // Auto-scroll if user was at bottom
         if (wasAtBottom) {
             setTimeout(scrollToBottom, CONFIG.APP.AUTO_SCROLL_DELAY);
         } else {
             showNewMessageIndicator();
+        }
+
+        // Save to history
+        if (saveHistory && CONFIG.APP.SAVE_HISTORY) {
+            saveChatHistory();
         }
     }
     
@@ -395,27 +579,30 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function forceScriptureFormatting(content) {
         // Pattern 1: Look for "Scripture teaches:" followed by quotes
-        content = content.replace(/(Scripture teaches:|The Bible says:|According to Scripture:|God's Word states:)\s*"([^"]+)"\s*\(([^)]+)\)/gi, 
+        content = content.replace(/(Scripture teaches:|The Bible says:|According to Scripture:|God's Word states:)\s*"([^"]+)"\s*\(([^)]+)\)/gi,
             (match, prefix, quote, reference) => {
-            return `${prefix}
+            return `<div class="scripture-intro">
+                <i class="fas fa-book-open"></i>
+                <span>${prefix}</span>
+            </div>
             <blockquote class="scripture-block">
-                <p class="scripture-text">"${quote}"</p>
+                <p class="scripture-text">${quote}</p>
                 <p class="scripture-reference">${reference}</p>
             </blockquote>`;
         });
-        
+
         // Pattern 2: Look for standalone quoted verses with references
         content = content.replace(/"([^"]+)"\s*\(([^)]+)\)/g, (match, quote, reference) => {
             // Check if this looks like a Bible reference
             if (/\d+:\d+/.test(reference)) {
                 return `<blockquote class="scripture-block">
-                    <p class="scripture-text">"${quote}"</p>
+                    <p class="scripture-text">${quote}</p>
                     <p class="scripture-reference">${reference}</p>
                 </blockquote>`;
             }
             return match;
         });
-        
+
         return content;
     }
     
@@ -546,11 +733,287 @@ document.addEventListener('DOMContentLoaded', () => {
             z-index: 1000;
             animation: slideIn 0.3s ease;
         `;
-        
+
         document.body.appendChild(errorDiv);
-        
+
         setTimeout(() => {
             errorDiv.remove();
         }, 5000);
+    }
+
+    // Conversation History Functions
+    function saveChatHistory() {
+        if (!CONFIG.APP.SAVE_HISTORY) return;
+
+        // Collect all messages from the chat
+        const messages = Array.from(chatMessages.querySelectorAll('.message')).map(msg => {
+            const isUser = msg.classList.contains('user');
+            const content = msg.querySelector('.message-content');
+            return {
+                role: isUser ? 'user' : 'assistant',
+                content: content.textContent || content.innerText,
+                timestamp: Date.now()
+            };
+        });
+
+        conversationHistory = messages;
+        localStorage.setItem(CONFIG.STORAGE.CHAT_HISTORY, JSON.stringify({
+            messages: conversationHistory,
+            sessionId: sessionId,
+            lastUpdated: Date.now()
+        }));
+    }
+
+    function loadChatHistory() {
+        if (!CONFIG.APP.SAVE_HISTORY) return;
+
+        try {
+            const saved = localStorage.getItem(CONFIG.STORAGE.CHAT_HISTORY);
+            if (!saved) return;
+
+            const data = JSON.parse(saved);
+
+            // Check if history is recent (within session timeout)
+            if (Date.now() - data.lastUpdated > CONFIG.APP.SESSION_TIMEOUT) {
+                localStorage.removeItem(CONFIG.STORAGE.CHAT_HISTORY);
+                return;
+            }
+
+            conversationHistory = data.messages || [];
+
+            if (conversationHistory.length > 0) {
+                hideIntroMessage();
+
+                conversationHistory.forEach(msg => {
+                    addMessageToChat(msg.role, msg.content, false);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+        }
+    }
+
+    function clearChatHistory() {
+        if (confirm('Are you sure you want to clear the conversation history?')) {
+            conversationHistory = [];
+            localStorage.removeItem(CONFIG.STORAGE.CHAT_HISTORY);
+            localStorage.removeItem(CONFIG.STORAGE.SESSION_ID);
+            sessionId = null;
+
+            // Clear chat messages
+            chatMessages.innerHTML = '';
+
+            // Show intro message again
+            introMessage.style.display = 'flex';
+            chatMessages.style.display = 'none';
+
+            console.log('Chat history cleared');
+        }
+    }
+
+    function exportChatHistory() {
+        if (conversationHistory.length === 0) {
+            showError('No conversation history to export');
+            return;
+        }
+
+        const date = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        let markdown = `# Exegete.AI Conversation\n\n`;
+        markdown += `**Date:** ${date}\n\n`;
+        markdown += `---\n\n`;
+
+        conversationHistory.forEach((msg, index) => {
+            const role = msg.role === 'user' ? '**You:**' : '**Exegete.AI:**';
+            markdown += `${role}\n\n${msg.content}\n\n---\n\n`;
+        });
+
+        // Create download
+        const blob = new Blob([markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `exegete-conversation-${Date.now()}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        console.log('Chat history exported');
+    }
+
+    // Utility Functions for UI Enhancements
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const diff = now - date;
+
+        // Less than 1 minute
+        if (diff < 60000) {
+            return 'Just now';
+        }
+
+        // Less than 1 hour
+        if (diff < 3600000) {
+            const minutes = Math.floor(diff / 60000);
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        }
+
+        // Less than 24 hours
+        if (diff < 86400000) {
+            const hours = Math.floor(diff / 3600000);
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        }
+
+        // Format as time if today, otherwise show date
+        const isToday = date.toDateString() === now.toDateString();
+        if (isToday) {
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message assistant typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="message-wrapper">
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                        <span class="typing-dot"></span>
+                    </div>
+                    <span class="typing-text">Exegete.AI is thinking...</span>
+                </div>
+            </div>
+        `;
+
+        chatMessages.appendChild(typingDiv);
+        scrollToBottom();
+        return typingDiv;
+    }
+
+    function copyMessageToClipboard(messageDiv) {
+        const content = messageDiv.querySelector('.message-content');
+        const text = content.textContent || content.innerText;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const copyBtn = messageDiv.querySelector('.copy-btn');
+            const originalHTML = copyBtn.innerHTML;
+
+            copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+            copyBtn.classList.add('copied');
+
+            setTimeout(() => {
+                copyBtn.innerHTML = originalHTML;
+                copyBtn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            showError('Failed to copy message');
+        });
+    }
+
+    function regenerateMessage(messageDiv) {
+        // Find the previous user message
+        let prevMessage = messageDiv.previousElementSibling;
+        while (prevMessage && !prevMessage.classList.contains('user')) {
+            prevMessage = prevMessage.previousElementSibling;
+        }
+
+        if (prevMessage) {
+            const userContent = prevMessage.querySelector('.message-content');
+            const text = userContent.textContent || userContent.innerText;
+
+            // Remove the current assistant message
+            messageDiv.remove();
+
+            // Resend the message
+            if (CONFIG.APP.ENABLE_STREAMING) {
+                sendStreamingMessage(text);
+            } else {
+                sendNonStreamingMessage(text);
+            }
+        }
+    }
+
+    function updateCharacterCounter() {
+        const text = userInput.value;
+        const length = text.length;
+        const max = CONFIG.APP.MAX_MESSAGE_LENGTH;
+        const remaining = max - length;
+
+        let counter = document.querySelector('.character-counter');
+        if (!counter) {
+            counter = document.createElement('div');
+            counter.className = 'character-counter';
+            userInput.parentElement.appendChild(counter);
+        }
+
+        counter.textContent = `${remaining} characters remaining`;
+
+        if (remaining < 100) {
+            counter.classList.add('warning');
+        } else {
+            counter.classList.remove('warning');
+        }
+
+        if (remaining < 0) {
+            counter.classList.add('error');
+        } else {
+            counter.classList.remove('error');
+        }
+    }
+
+    function addScrollToBottomButton() {
+        let scrollBtn = document.querySelector('.scroll-to-bottom');
+
+        if (!scrollBtn) {
+            scrollBtn = document.createElement('button');
+            scrollBtn.className = 'scroll-to-bottom';
+            scrollBtn.innerHTML = '<i class="fas fa-arrow-down"></i>';
+            scrollBtn.title = 'Scroll to bottom';
+            scrollBtn.setAttribute('aria-label', 'Scroll to bottom');
+
+            scrollBtn.addEventListener('click', () => {
+                scrollToBottom();
+                scrollBtn.classList.remove('visible');
+            });
+
+            chatMessages.parentElement.appendChild(scrollBtn);
+        }
+
+        // Show/hide based on scroll position
+        const handleScroll = () => {
+            if (isAtBottom()) {
+                scrollBtn.classList.remove('visible');
+            } else {
+                scrollBtn.classList.add('visible');
+            }
+        };
+
+        chatMessages.addEventListener('scroll', handleScroll);
+        handleScroll();
+    }
+
+    // Add character counter to input
+    userInput.addEventListener('input', updateCharacterCounter);
+
+    // Add scroll to bottom button
+    addScrollToBottomButton();
+
+    // Make functions globally available for history controls
+    window.clearChatHistory = clearChatHistory;
+    window.exportChatHistory = exportChatHistory;
+
+    // Load history on init
+    if (CONFIG.APP.SAVE_HISTORY) {
+        loadChatHistory();
     }
 });
